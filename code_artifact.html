@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>알록달록 숫자 색칠 놀이 🎨</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts for Cute Style -->
+  <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Gaegu', 'Nanum Pen Script', sans-serif;
+    }
+    /* Grid cell styling with soft transition */
+    .grid-cell {
+      transition: background-color 0.15s ease, transform 0.1s ease;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    /* Pulsating animation for selected hints */
+    @keyframes hintPulse {
+      0%, 100% {
+        box-shadow: inset 0 0 0 3px #3B82F6;
+        transform: scale(0.96);
+      }
+      50% {
+        box-shadow: inset 0 0 0 4px #F59E0B;
+        transform: scale(1.04);
+        background-color: #FEF3C7;
+      }
+    }
+    .hint-active {
+      animation: hintPulse 1.2s infinite ease-in-out;
+      z-index: 10;
+    }
+    /* Elastic animation on click */
+    .grid-cell:active {
+      transform: scale(0.9);
+    }
+    /* Custom scrollbar for beautiful lists */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen text-slate-800 flex flex-col select-none overflow-x-hidden pb-10">
+
+  <!-- Header Section -->
+  <header class="w-full max-w-5xl mx-auto px-4 pt-6 pb-2 flex flex-col sm:flex-row justify-between items-center gap-4">
+    <div class="flex items-center gap-3">
+      <span class="text-4xl animate-bounce">🎨</span>
+      <div>
+        <h1 class="text-3xl sm:text-4xl font-bold text-indigo-600 tracking-wide drop-shadow-sm">알록달록 숫자 색칠 놀이</h1>
+        <p class="text-lg sm:text-xl text-slate-500 font-medium">숫자에 맞춰 밝고 이쁜 그림들을 완성해봐요!</p>
+      </div>
+    </div>
+    
+    <!-- Sound Toggle -->
+    <button id="sound-btn" class="flex items-center gap-2 bg-white hover:bg-slate-100 border-2 border-indigo-200 px-4 py-2 rounded-full shadow-sm text-xl font-bold transition-transform active:scale-95">
+      <span id="sound-icon">🔊</span>
+      <span id="sound-text">소리 켜짐</span>
+    </button>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="w-full max-w-5xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-6 mt-4 items-start">
+    
+    <!-- Left Column: Levels & Progress -->
+    <section class="lg:col-span-3 flex flex-col gap-4">
+      <!-- Mascot Guide Character -->
+      <div class="bg-white border-4 border-indigo-200 rounded-3xl p-4 shadow-md flex flex-col items-center relative">
+        <div id="mascot-container" class="w-24 h-24 flex items-center justify-center transition-transform duration-300">
+          <!-- Big Cute Star Mascot SVG -->
+          <svg id="mascot-svg" class="w-full h-full drop-shadow-md" viewBox="0 0 100 100">
+            <!-- Body -->
+            <polygon points="50,5 64,36 98,36 70,57 81,91 50,70 19,91 30,57 2,36 36,36" fill="#FBBF24" stroke="#D97706" stroke-width="3" stroke-linejoin="round"/>
+            <!-- Eyes (Normal) -->
+            <g id="mascot-eyes">
+              <circle cx="38" cy="48" r="5" fill="#1E293B"/>
+              <circle cx="62" cy="48" r="5" fill="#1E293B"/>
+              <circle cx="36" cy="46" r="1.5" fill="#FFFFFF"/>
+              <circle cx="60" cy="46" r="1.5" fill="#FFFFFF"/>
+            </g>
+            <!-- Mouth (Smile) -->
+            <path id="mascot-mouth" d="M42,58 Q50,66 58,58" fill="none" stroke="#1E293B" stroke-width="3" stroke-linecap="round"/>
+            <!-- Blush -->
+            <circle cx="30" cy="55" r="4" fill="#F87171" opacity="0.6"/>
+            <circle cx="70" cy="55" r="4" fill="#F87171" opacity="0.6"/>
+          </svg>
+        </div>
+        
+        <!-- Speech Bubble -->
+        <div class="mt-3 bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-3 text-center relative w-full">
+          <!-- Bubble triangle -->
+          <div class="absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-indigo-50 border-t-2 border-l-2 border-indigo-200 rotate-45"></div>
+          <p id="speech-bubble" class="text-lg font-bold text-indigo-900 leading-tight">안녕! 나랑 같이 숫자를 보며 예쁘게 색을 칠해볼까?</p>
+        </div>
+      </div>
+
+      <!-- Level Selector Card -->
+      <div class="bg-white border-4 border-indigo-100 rounded-3xl p-5 shadow-md">
+        <h2 class="text-2xl font-bold text-slate-700 mb-4 flex items-center gap-2">
+          <span>🖼️</span> 그림 고르기
+        </h2>
+        <div class="flex flex-col gap-3" id="level-list">
+          <!-- Level items will be dynamically rendered here -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Center Column: Painting Grid -->
+    <section class="lg:col-span-6 flex flex-col items-center">
+      <!-- Main Board Wrapper -->
+      <div class="bg-white border-8 border-indigo-300 rounded-[32px] p-4 sm:p-6 shadow-xl w-full flex flex-col items-center relative overflow-hidden">
+        
+        <!-- Current Picture Info & Reset -->
+        <div class="w-full flex justify-between items-center mb-4 px-2">
+          <div class="flex flex-col">
+            <span id="current-title" class="text-2xl sm:text-3xl font-extrabold text-indigo-700">사랑 가득 하트</span>
+            <span id="current-info" class="text-sm sm:text-base font-bold text-slate-400">15 x 15 격자판</span>
+          </div>
+          <button id="reset-btn" class="bg-rose-100 hover:bg-rose-200 text-rose-600 border-2 border-rose-300 px-4 py-2 rounded-full font-bold text-lg flex items-center gap-1 transition-transform active:scale-95 shadow-sm">
+            <span>🔄</span> 다시 하기
+          </button>
+        </div>
+
+        <!-- Progress bar inside board -->
+        <div class="w-full bg-slate-100 rounded-full h-5 mb-4 relative overflow-hidden border-2 border-slate-200 shadow-inner">
+          <div id="progress-bar" class="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+          <span id="progress-text" class="absolute inset-0 flex items-center justify-center text-xs font-black text-emerald-900">완성률: 0%</span>
+        </div>
+
+        <!-- Dynamic Grid Container -->
+        <div id="grid-container" class="relative bg-slate-50 border-4 border-slate-200 rounded-2xl overflow-hidden p-1 shadow-inner max-w-full touch-none select-none">
+          <!-- Pixels will be rendered dynamically -->
+        </div>
+
+        <!-- Easy Mode Warning / Guide Banner -->
+        <div id="easy-mode-banner" class="hidden mt-3 text-center py-1.5 px-4 bg-amber-50 border border-amber-200 text-amber-800 text-sm font-bold rounded-xl animate-pulse">
+          🎯 자동 색상 모드 켜짐! 터치만 해도 딱 맞는 색이 칠해져요!
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Color Palette & Accessibility Assist Options -->
+    <section class="lg:col-span-3 flex flex-col gap-6">
+      
+      <!-- Palette Card -->
+      <div class="bg-white border-4 border-indigo-100 rounded-3xl p-5 shadow-md flex flex-col items-center">
+        <h2 class="text-2xl font-bold text-slate-700 mb-3 text-center w-full">
+          🎨 무슨 색으로 칠할까요?
+        </h2>
+        <p class="text-sm font-bold text-slate-400 mb-4 text-center">번호를 누르고 같은 숫자의 칸을 누르세요!</p>
+        
+        <!-- Big Round Color Options -->
+        <div id="palette-container" class="flex flex-row lg:flex-col gap-4 w-full justify-center lg:items-center">
+          <!-- Dynamic palette buttons generated here -->
+        </div>
+      </div>
+
+      <!-- Accessibility Assist Tool Block -->
+      <div class="bg-indigo-900 text-white rounded-3xl p-5 shadow-lg border-4 border-indigo-800">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+          <span>⚙️</span> 도우미 설정
+        </h2>
+        
+        <div class="flex flex-col gap-4">
+          <!-- Assist Toggle 1: Highlight same numbers -->
+          <div class="flex justify-between items-center bg-indigo-850 p-2.5 rounded-2xl border border-indigo-750">
+            <div class="flex flex-col pr-2">
+              <span class="text-lg font-bold">💡 숫자 힌트 켜기</span>
+              <span class="text-xs text-indigo-200">칠해야 할 번호를 깜빡이게 보여줘요</span>
+            </div>
+            <button id="toggle-helper" class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none bg-indigo-600">
+              <span id="helper-switch" class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-5"></span>
+            </button>
+          </div>
+
+          <!-- Assist Toggle 2: Easy Click Mode (No palette check) -->
+          <div class="flex justify-between items-center bg-indigo-850 p-2.5 rounded-2xl border border-indigo-750">
+            <div class="flex flex-col pr-2">
+              <span class="text-lg font-bold">🎯 자동 색상 선택</span>
+              <span class="text-xs text-indigo-200">색을 고르지 않아도 터치하면 알아서 맞춰요</span>
+            </div>
+            <button id="toggle-easy" class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none bg-slate-600">
+              <span id="easy-switch" class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-0"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Complete Reward Modal -->
+  <div id="victory-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white border-8 border-amber-300 rounded-[40px] p-8 max-w-md w-full text-center shadow-2xl transform scale-95 transition-transform duration-300 relative overflow-hidden">
+      <!-- Confetti Cannon Design -->
+      <div class="absolute -top-10 -left-10 text-6xl animate-pulse">🎉</div>
+      <div class="absolute -top-10 -right-10 text-6xl animate-pulse">🎊</div>
+      
+      <!-- Big Golden Trophy or Completed Artwork Preview -->
+      <div class="w-32 h-32 mx-auto bg-amber-100 rounded-full flex items-center justify-center mb-6 border-4 border-amber-300 shadow-md">
+        <span class="text-7xl animate-bounce">🏆</span>
+      </div>
+
+      <h3 class="text-4xl font-extrabold text-amber-600 mb-2">참 잘했어요!</h3>
+      <p class="text-2xl font-bold text-slate-600 mb-6">최고예요! 그림을 예쁘게 완성했어요! 🌟</p>
+      
+      <!-- Button actions -->
+      <div class="flex flex-col gap-3">
+        <button id="next-level-btn" class="bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-black text-2xl py-4 rounded-3xl shadow-md transform hover:-translate-y-1 transition duration-150 active:translate-y-0">
+          다음 그림 하러 가기! 👉
+        </button>
+        <button id="close-modal-btn" class="bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold text-lg py-2.5 rounded-2xl">
+          그림 계속 구경하기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Particle canvas for falling confetti -->
+  <canvas id="confetti-canvas" class="pointer-events-none fixed inset-0 z-40 hidden w-full h-full"></canvas>
+
+  <!-- Sound Synth Engine & Game logic in Vanilla JS -->
+  <script>
+    // --- Levels Database (No Black/Dark tones, all bright & pastel) ---
+    const LEVELS = [
+      {
+        id: "heart",
+        title: "사랑 가득 하트",
+        subtitle: "15 x 15 격자판",
+        emoji: "💖",
+        palette: {
+          1: { name: "보라", hex: "#A78BFA", textHex: "#FFFFFF" },
+          2: { name: "빨강", hex: "#EF4444", textHex: "#FFFFFF" },
+          3: { name: "분홍", hex: "#EC4899", textHex: "#FFFFFF" }
+        },
+        grid: [
+          [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+          [0,0,1,1,0,0,0,0,0,1,1,0,0,0,0],
+          [0,1,3,3,1,0,0,0,1,2,2,1,0,0,0],
+          [1,3,3,3,2,1,0,1,3,3,2,2,1,0,0],
+          [1,3,0,0,3,2,1,3,3,3,2,2,1,0,0], // Light reflection (0)
+          [1,3,0,0,3,3,3,3,3,3,2,2,1,0,0], // Light reflection (0)
+          [1,3,3,3,3,3,3,3,3,3,2,2,1,0,0],
+          [0,1,3,3,3,3,3,3,3,3,2,1,0,0,0],
+          [0,0,1,3,3,3,3,3,3,2,1,0,0,0,0],
+          [0,0,0,1,2,3,3,3,2,1,0,0,0,0,0],
+          [0,0,0,0,1,2,3,2,1,0,0,0,0,0,0],
+          [0,0,0,0,0,1,2,1,0,0,0,0,0,0,0],
+          [0,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
+          [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+          [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        ]
+      },
+      {
+        id: "duck",
+        title: "귀여운 아기 오리",
+        subtitle: "15 x 15 격자판",
+        emoji: "🐤",
+        palette: {
+          1: { name: "주황", hex: "#F97316", textHex: "#FFFFFF" },
+          2: { name: "노랑", hex: "#FACC15", textHex: "#1E293B" },
+          3: { name: "하늘", hex: "#60A5FA", textHex: "#FFFFFF" }
+        },
+        grid: [
+          [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+          [0,0,0,0,2,2,2,2,0,0,0,0,0,0,0],
+          [0,0,0,2,2,2,2,2,2,0,0,0,0,0,0],
+          [0,0,1,1,2,2,3,2,2,0,0,0,0,0,0], // Eye is 3 (Sky Blue)
+          [0,1,1,1,2,2,2,2,2,0,0,0,0,0,0], // Beak is 1 (Orange)
+          [0,0,0,0,2,2,2,2,2,0,0,0,0,0,0],
+          [0,0,0,0,2,2,2,2,2,2,2,2,0,0,0],
+          [0,0,2,2,2,2,2,2,2,2,2,2,2,0,0],
+          [0,2,2,2,2,2,2,2,2,2,2,2,2,0,0],
+          [0,2,2,2,2,2,2,2,2,2,2,2,0,0,0],
+          [0,0,2,2,2,2,2,2,2,2,2,0,0,0,0],
+          [0,0,0,2,2,2,2,2,2,2,0,0,0,0,0],
+          [0,0,0,0,1,1,0,1,1,0,0,0,0,0,0], // Legs are 1 (Orange)
+          [0,0,0,1,1,1,0,1,1,1,0,0,0,0,0],
+          [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        ]
+      },
+      {
+        id: "apple",
+        title: "맛있는 빨간 사과",
+        subtitle: "15 x 15 격자판",
+        emoji: "🍎",
+        palette: {
+          1: { name: "갈색", hex: "#D97706", textHex: "#FFFFFF" },
+          2: { name: "초록", hex: "#10B981", textHex: "#FFFFFF" },
+          3: { name: "빨강", hex: "#EF4444", textHex: "#FFFFFF" }
+        },
+        grid: [
+          [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+          [0,0,0,0,0,0,1,1,0,0,0,0,0,0,0], // Stem
+          [0,0,0,0,0,0,1,1,2,2,2,0,0,0,0], // Leaf
+          [0,0,0,0,0,1,1,2,2,2,2,2,0,0,0],
+          [0,0,0,0,1,1,0,0,2,2,2,0,0,0,0],
+          [0,0,3,3,3,3,0,0,3,3,3,3,0,0,0], // Apple Body
+          [0,3,3,3,3,3,3,3,3,3,3,3,3,0,0],
+          [3,3,3,3,3,3,3,3,3,3,3,3,3,3,0],
+          [3,3,3,3,3,3,3,3,3,3,3,3,3,3,0],
+          [3,3,3,3,3,3,3,3,3,3,3,3,3,3,0],
+          [3,3,3,3,3,3,3,3,3,3,3,3,3,3,0],
+          [0,3,3,3,3,3,3,3,3,3,3,3,3,0,0],
+          [0,0,3,3,3,3,3,3,3,3,3,3,0,0,0],
+          [0,0,0,3,3,3,0,0,3,3,3,0,0,0,0],
+          [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        ]
+      },
+      {
+        id: "star",
+        title: "반짝이는 아기 별",
+        subtitle: "15 x 15 격자판",
+        emoji: "⭐",
+        palette: {
+          1: { name: "주황", hex: "#F97316", textHex: "#FFFFFF" },
+          2: { name: "노랑", hex: "#FACC15", textHex: "#1E293B" },
+          3: { name: "분홍", hex: "#F472B6", textHex: "#FFFFFF" }
+        },
+        grid: [
+          [0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+          [0,0,0,0,0,0,1,2,1,0,0,0,0,0,0],
+          [0,0,0,0,0,1,2,2,2,1,0,0,0,0,0],
+          [0,0,0,0,0,1,2,2,2,1,0,0,0,0,0],
+          [1,1,1,1,1,2,2,2,2,2,1,1,1,1,1],
+          [0,1,2,2,2,2,2,2,2,2,2,2,2,1,0],
+          [0,0,1,2,2,3,2,2,2,3,2,2,1,0,0], // Cheeks are 3 (Pink)
+          [0,0,0,1,2,2,2,2,2,2,2,1,0,0,0],
+          [0,0,0,1,2,2,2,2,2,2,2,1,0,0,0],
+          [0,0,1,2,2,2,2,2,2,2,2,2,1,0,0],
+          [0,1,2,2,2,2,1,1,1,2,2,2,2,1,0],
+          [1,1,1,2,2,1,0,0,0,1,2,2,1,1,1],
+          [0,0,1,2,1,0,0,0,0,0,1,2,1,0,0],
+          [0,1,1,0,0,0,0,0,0,0,0,1,1,0,0],
+          [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        ]
+      },
+      {
+        id: "tulip",
+        title: "예쁜 정원 튤립",
+        subtitle: "15 x 15 격자판",
+        emoji: "🌷",
+        palette: {
+          1: { name: "분홍", hex: "#EC4899", textHex: "#FFFFFF" },
+          2: { name: "주황", hex: "#F97316", textHex: "#FFFFFF" },
+          3: { name: "연두", hex: "#84CC16", textHex: "#1E293B" }
+        },
+        grid: [
+          [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+          [0,0,0,0,1,0,0,2,0,0,1,0,0,0,0],
+          [0,0,0,1,1,1,0,2,0,1,1,1,0,0,0],
+          [0,0,1,1,1,1,2,2,2,1,1,1,1,0,0],
+          [0,0,1,1,1,2,2,2,2,2,1,1,1,0,0],
+          [0,0,1,1,2,2,2,2,2,2,2,1,1,0,0],
+          [0,0,0,1,2,2,2,2,2,2,2,1,0,0,0],
+          [0,0,0,0,1,2,2,2,2,2,1,0,0,0,0],
+          [0,0,0,0,0,1,1,1,1,1,0,0,0,0,0],
+          [0,0,0,0,0,0,3,3,0,0,0,0,0,0,0], // Stem
+          [0,0,0,3,3,0,3,3,0,0,0,0,0,0,0], // Leaves
+          [0,0,3,3,3,3,3,3,0,3,3,3,0,0,0],
+          [0,0,0,3,3,3,3,3,3,3,3,0,0,0,0],
+          [0,0,0,0,0,0,3,3,0,0,0,0,0,0,0],
+          [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        ]
+      }
+    ];
+
+    // --- State Variables ---
+    let activeLevelIndex = 0;
+    let selectedColorId = 1; // Default selected palette number
+    let userProgress = [];   // 2D Array tracking currently painted grid
+    let isDrawing = false;   // Mouse/touch dragging state
+    let soundEnabled = true;
+    let helperEnabled = true;
+    let easyModeEnabled = false;
+
+    // --- Audio Synthesis Setup ---
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playTone(freq, type, duration, delay = 0) {
+      if (!soundEnabled) return;
+      initAudio();
+      
+      setTimeout(() => {
+        try {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+          
+          gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+          
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          
+          osc.start();
+          osc.stop(audioCtx.currentTime + duration);
+        } catch (e) {
+          console.warn("Audio Context Error", e);
+        }
+      }, delay * 1000);
+    }
+
+    function playPop() {
+      if (!soundEnabled) return;
+      initAudio();
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      } catch (e) {}
+    }
+
+    function playWrong() {
+      if (!soundEnabled) return;
+      initAudio();
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(250, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(120, audioCtx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+      } catch (e) {}
+    }
+
+    function playSuccess() {
+      const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+      notes.forEach((freq, index) => {
+        playTone(freq, "sine", 0.4, index * 0.1);
+      });
+    }
+
+    // --- Mascot Speech Bubble Prompts ---
+    const MASCOT_PROMPTS = {
+      start: [
+        "와! 신나는 색칠하기 시간이에요! 시작해볼까요? 😉",
+        "숫자에 맞는 칸을 콕콕 누르면 예쁜 그림이 나와요! 💖",
+        "천천히 함께 완성해봐요! 화이팅! 🌱"
+      ],
+      painting: [
+        "정말 대단해요! 알록달록 색이 채워지고 있어요! 😄",
+        "손가락을 누른 채로 슥슥 문지르면 더 쉽게 칠할 수 있어요! 🌟",
+        "우와! 거의 다 칠했네요! 마법 같아요! 🪄"
+      ],
+      wrong: [
+        "오옷! 여긴 다른 숫자 칸인 것 같아요! 😮",
+        "밑에 알맞은 번호를 다시 한 번 꾹 눌러볼까요? 💡",
+        "괜찮아요! 숫자를 차근차근 다시 맞춰봐요! 👍"
+      ],
+      completed: [
+        "최고예요! 너무너무 잘했어요! 완전 백점 만점! 😍🏆",
+        "이렇게 예쁜 그림을 완성하다니 대단해요! 다른 그림도 같이 할까요? ✨"
+      ]
+    };
+
+    function updateMascotSpeech(type, customText = null) {
+      const bubbleText = document.getElementById("speech-bubble");
+      const svg = document.getElementById("mascot-svg");
+      const mouth = document.getElementById("mascot-mouth");
+      
+      if (customText) {
+        bubbleText.innerText = customText;
+      } else {
+        const pool = MASCOT_PROMPTS[type];
+        const randomText = pool[Math.floor(Math.random() * pool.length)];
+        bubbleText.innerText = randomText;
+      }
+
+      if (type === 'wrong') {
+        mouth.setAttribute("d", "M45,60 A5,5 0 1,0 55,60");
+        svg.style.transform = "rotate(-10deg) scale(1.1)";
+        setTimeout(() => { svg.style.transform = "rotate(0deg) scale(1)"; }, 300);
+      } else if (type === 'completed') {
+        mouth.setAttribute("d", "M35,55 Q50,75 65,55");
+        svg.style.transform = "scale(1.2)";
+      } else {
+        mouth.setAttribute("d", "M42,58 Q50,66 58,58");
+        svg.style.transform = "scale(1)";
+      }
+    }
+
+    // --- Confetti Blast System for Complete Screen ---
+    const canvas = document.getElementById("confetti-canvas");
+    const ctx = canvas.getContext("2d");
+    let confettiActive = false;
+    let particles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resizeCanvas);
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height - canvas.height;
+        this.size = Math.random() * 8 + 6;
+        this.color = `hsl(${Math.random() * 360}, 90%, 60%)`;
+        this.speedY = Math.random() * 3 + 4;
+        this.speedX = Math.random() * 2 - 1;
+        this.rotation = Math.random() * 360;
+        this.rotSpeed = Math.random() * 4 - 2;
+      }
+      update() {
+        this.y += this.speedY;
+        this.x += this.speedX;
+        this.rotation += this.rotSpeed;
+        if (this.y > canvas.height) {
+          this.y = -20;
+          this.x = Math.random() * canvas.width;
+        }
+      }
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate((this.rotation * Math.PI) / 180);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+        ctx.restore();
+      }
+    }
+
+    function initConfetti() {
+      particles = [];
+      for (let i = 0; i < 120; i++) {
+        particles.push(new Particle());
+      }
+    }
+
+    function animateConfetti() {
+      if (!confettiActive) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      requestAnimationFrame(animateConfetti);
+    }
+
+    function startConfetti() {
+      resizeCanvas();
+      initConfetti();
+      canvas.classList.remove("hidden");
+      confettiActive = true;
+      animateConfetti();
+    }
+
+    function stopConfetti() {
+      confettiActive = false;
+      canvas.classList.add("hidden");
+    }
+
+    // --- Game Renderer & Core Functions ---
+
+    function loadLevel(levelIndex) {
+      activeLevelIndex = levelIndex;
+      const level = LEVELS[activeLevelIndex];
+      
+      selectedColorId = 1;
+
+      document.getElementById("current-title").innerText = `${level.emoji} ${level.title}`;
+      document.getElementById("current-info").innerText = level.subtitle;
+
+      userProgress = Array(level.grid.length).fill(null).map(() => Array(level.grid[0].length).fill(0));
+
+      renderLevelSelection();
+      renderPalette();
+      renderGrid();
+      updateProgressBar();
+      updateMascotSpeech('start');
+      stopConfetti();
+    }
+
+    function renderLevelSelection() {
+      const levelListContainer = document.getElementById("level-list");
+      levelListContainer.innerHTML = "";
+
+      LEVELS.forEach((level, index) => {
+        const isSelected = index === activeLevelIndex;
+        const btn = document.createElement("button");
+        btn.className = `w-full text-left p-3 rounded-2xl border-2 flex items-center justify-between transition-all duration-150 ${
+          isSelected 
+            ? "border-indigo-500 bg-indigo-50 text-indigo-900 shadow-sm font-extrabold ring-4 ring-indigo-100" 
+            : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 font-bold"
+        }`;
+        btn.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="text-3xl">${level.emoji}</span>
+            <div class="flex flex-col">
+              <span class="text-xl leading-tight">${level.title}</span>
+              <span class="text-xs ${isSelected ? 'text-indigo-500' : 'text-slate-400'}">${level.subtitle}</span>
+            </div>
+          </div>
+          ${isSelected ? '⭐' : ''}
+        `;
+        btn.addEventListener("click", () => {
+          playPop();
+          loadLevel(index);
+        });
+        levelListContainer.appendChild(btn);
+      });
+    }
+
+    function renderPalette() {
+      const level = LEVELS[activeLevelIndex];
+      const paletteContainer = document.getElementById("palette-container");
+      paletteContainer.innerHTML = "";
+
+      Object.keys(level.palette).forEach(colorId => {
+        const idNum = parseInt(colorId);
+        const colInfo = level.palette[colorId];
+        const isSelected = idNum === selectedColorId;
+
+        const pBtn = document.createElement("button");
+        pBtn.className = `flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-3 rounded-2xl border-4 transition-all duration-150 transform hover:scale-105 active:scale-95 shadow-md select-none ${
+          isSelected 
+            ? "border-amber-400 ring-4 ring-amber-200 scale-105 font-black text-2xl" 
+            : "border-slate-100 hover:border-indigo-100 font-bold text-xl"
+        }`;
+        pBtn.style.backgroundColor = colInfo.hex;
+        pBtn.style.color = colInfo.textHex;
+        
+        pBtn.innerHTML = `
+          <span class="text-2xl">${idNum}</span>
+          <span class="text-base sm:text-lg">${colInfo.name}</span>
+        `;
+        pBtn.addEventListener("click", () => {
+          selectedColorId = idNum;
+          playPop();
+          renderPalette();
+          applyHelperHighlights();
+          updateMascotSpeech('start', `${idNum}번 ${colInfo.name}색을 골랐어요! 격자판에 숫자가 적힌 칸을 찾아볼까요?`);
+        });
+
+        paletteContainer.appendChild(pBtn);
+      });
+    }
+
+    function renderGrid() {
+      const level = LEVELS[activeLevelIndex];
+      const gridContainer = document.getElementById("grid-container");
+      gridContainer.innerHTML = "";
+
+      const rowCount = level.grid.length;
+      const colCount = level.grid[0].length;
+
+      gridContainer.style.display = "grid";
+      gridContainer.style.gridTemplateRows = `repeat(${rowCount}, minmax(0, 1fr))`;
+      gridContainer.style.gridTemplateColumns = `repeat(${colCount}, minmax(0, 1fr))`;
+
+      const cellClasses = "grid-cell flex items-center justify-center font-bold text-sm sm:text-lg border border-slate-200 aspect-square w-[24px] h-[24px] sm:w-[32px] sm:h-[32px] select-none";
+
+      for (let r = 0; r < rowCount; r++) {
+        for (let c = 0; c < colCount; c++) {
+          const targetNum = level.grid[r][c];
+          const cell = document.createElement("div");
+          cell.className = cellClasses;
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+
+          if (targetNum === 0) {
+            cell.style.backgroundColor = "#FFFFFF";
+            cell.innerHTML = "";
+            cell.classList.add("bg-white-cell");
+          } else {
+            cell.style.backgroundColor = "#F1F5F9";
+            cell.innerHTML = targetNum;
+            cell.style.color = "#94A3B8";
+          }
+
+          cell.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            isDrawing = true;
+            paintCell(r, c);
+          });
+
+          cell.addEventListener("mouseenter", () => {
+            if (isDrawing) {
+              paintCell(r, c);
+            }
+          });
+
+          gridContainer.appendChild(cell);
+        }
+      }
+
+      window.addEventListener("mouseup", () => {
+        isDrawing = false;
+      });
+
+      gridContainer.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        isDrawing = true;
+        const touch = e.touches[0];
+        const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (elem && elem.dataset && elem.dataset.row !== undefined) {
+          paintCell(parseInt(elem.dataset.row), parseInt(elem.dataset.col));
+        }
+      }, { passive: false });
+
+      gridContainer.addEventListener("touchmove", (e) => {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (elem && elem.dataset && elem.dataset.row !== undefined) {
+          paintCell(parseInt(elem.dataset.row), parseInt(elem.dataset.col));
+        }
+      }, { passive: false });
+
+      gridContainer.addEventListener("touchend", () => {
+        isDrawing = false;
+      });
+
+      applyHelperHighlights();
+    }
+
+    function paintCell(r, c) {
+      const level = LEVELS[activeLevelIndex];
+      const targetNum = level.grid[r][c];
+
+      if (targetNum === 0) return;
+
+      const currentCell = document.querySelector(`.grid-cell[data-row='${r}'][data-col='${c}']`);
+      if (!currentCell) return;
+
+      if (userProgress[r][c] === targetNum) return;
+
+      if (easyModeEnabled) {
+        selectedColorId = targetNum;
+        renderPalette();
+        applyHelperHighlights();
+      }
+
+      if (selectedColorId === targetNum) {
+        userProgress[r][c] = targetNum;
+        const colInfo = level.palette[targetNum];
+        
+        currentCell.style.backgroundColor = colInfo.hex;
+        currentCell.style.color = colInfo.textHex;
+        currentCell.innerHTML = ""; 
+        currentCell.classList.remove("hint-active");
+
+        playPop();
+        updateProgressBar();
+        checkWinCondition();
+        
+        if (Math.random() < 0.25) {
+          updateMascotSpeech('painting');
+        }
+      } else {
+        playWrong();
+        currentCell.style.transform = "scale(0.85)";
+        setTimeout(() => { currentCell.style.transform = "scale(1)"; }, 120);
+
+        const correctColorName = level.palette[targetNum].name;
+        updateMascotSpeech('wrong', `어라? 이 칸은 ${targetNum}번이에요! 아래에서 ${correctColorName}색을 골라 칠해볼까요?`);
+      }
+    }
+
+    function applyHelperHighlights() {
+      document.querySelectorAll(".grid-cell").forEach(cell => {
+        cell.classList.remove("hint-active");
+      });
+
+      if (!helperEnabled) return;
+
+      const level = LEVELS[activeLevelIndex];
+      for (let r = 0; r < level.grid.length; r++) {
+        for (let c = 0; c < level.grid[0].length; c++) {
+          const cellVal = level.grid[r][c];
+          if (cellVal === selectedColorId && userProgress[r][c] !== selectedColorId) {
+            const cellElem = document.querySelector(`.grid-cell[data-row='${r}'][data-col='${c}']`);
+            if (cellElem) {
+              cellElem.classList.add("hint-active");
+            }
+          }
+        }
+      }
+    }
+
+    function updateProgressBar() {
+      const level = LEVELS[activeLevelIndex];
+      let totalToColor = 0;
+      let currentlyColored = 0;
+
+      for (let r = 0; r < level.grid.length; r++) {
+        for (let c = 0; c < level.grid[0].length; c++) {
+          if (level.grid[r][c] !== 0) {
+            totalToColor++;
+            if (userProgress[r][c] === level.grid[r][c]) {
+              currentlyColored++;
+            }
+          }
+        }
+      }
+
+      const percent = totalToColor > 0 ? Math.round((currentlyColored / totalToColor) * 100) : 0;
+      
+      const bar = document.getElementById("progress-bar");
+      const label = document.getElementById("progress-text");
+
+      bar.style.width = `${percent}%`;
+      label.innerText = `완성률: ${percent}%`;
+    }
+
+    function checkWinCondition() {
+      const level = LEVELS[activeLevelIndex];
+      let won = true;
+
+      for (let r = 0; r < level.grid.length; r++) {
+        for (let c = 0; c < level.grid[0].length; c++) {
+          if (level.grid[r][c] !== 0 && userProgress[r][c] !== level.grid[r][c]) {
+            won = false;
+            break;
+          }
+        }
+        if (!won) break;
+      }
+
+      if (won) {
+        showVictoryScreen();
+      }
+    }
+
+    function showVictoryScreen() {
+      playSuccess();
+      startConfetti();
+      updateMascotSpeech('completed');
+
+      const modal = document.getElementById("victory-modal");
+      modal.classList.remove("hidden");
+    }
+
+    function closeVictoryModal() {
+      const modal = document.getElementById("victory-modal");
+      modal.classList.add("hidden");
+      stopConfetti();
+    }
+
+    // --- Dom Controls & Interactivity Setup ---
+
+    document.getElementById("reset-btn").addEventListener("click", () => {
+      playPop();
+      loadLevel(activeLevelIndex);
+    });
+
+    document.getElementById("sound-btn").addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      const sIcon = document.getElementById("sound-icon");
+      const sTxt = document.getElementById("sound-text");
+      const sBtn = document.getElementById("sound-btn");
+
+      if (soundEnabled) {
+        sIcon.innerText = "🔊";
+        sTxt.innerText = "소리 켜짐";
+        sBtn.className = "flex items-center gap-2 bg-white hover:bg-slate-100 border-2 border-indigo-200 px-4 py-2 rounded-full shadow-sm text-xl font-bold transition-transform active:scale-95";
+        initAudio();
+        playTone(523.25, "sine", 0.15);
+      } else {
+        sIcon.innerText = "🔇";
+        sTxt.innerText = "소리 꺼짐";
+        sBtn.className = "flex items-center gap-2 bg-slate-100 hover:bg-slate-200 border-2 border-slate-300 text-slate-500 px-4 py-2 rounded-full shadow-sm text-xl font-bold transition-transform active:scale-95";
+      }
+    });
+
+    const helperBtn = document.getElementById("toggle-helper");
+    const helperSwitch = document.getElementById("helper-switch");
+    helperBtn.addEventListener("click", () => {
+      helperEnabled = !helperEnabled;
+      playPop();
+      if (helperEnabled) {
+        helperBtn.className = "relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none bg-indigo-600";
+        helperSwitch.className = "pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-5";
+        updateMascotSpeech('start', "숫자 반짝이 도우미를 켰어요! 맞춰서 칠해봐요!");
+      } else {
+        helperBtn.className = "relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none bg-slate-600";
+        helperSwitch.className = "pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-0";
+      }
+      applyHelperHighlights();
+    });
+
+    const easyBtn = document.getElementById("toggle-easy");
+    const easySwitch = document.getElementById("easy-switch");
+    easyBtn.addEventListener("click", () => {
+      easyModeEnabled = !easyModeEnabled;
+      playPop();
+      const banner = document.getElementById("easy-mode-banner");
+
+      if (easyModeEnabled) {
+        easyBtn.className = "relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none bg-indigo-600";
+        easySwitch.className = "pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-5";
+        banner.classList.remove("hidden");
+        updateMascotSpeech('start', "자동 색칠 모드를 켰어요! 터치만 해도 다 맞아요!");
+      } else {
+        easyBtn.className = "relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none bg-slate-600";
+        easySwitch.className = "pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-0";
+        banner.classList.add("hidden");
+      }
+      applyHelperHighlights();
+    });
+
+    document.getElementById("close-modal-btn").addEventListener("click", () => {
+      playPop();
+      closeVictoryModal();
+    });
+
+    document.getElementById("next-level-btn").addEventListener("click", () => {
+      playPop();
+      closeVictoryModal();
+      const nextIdx = (activeLevelIndex + 1) % LEVELS.length;
+      loadLevel(nextIdx);
+    });
+
+    // --- Game Entry Point ---
+    window.onload = function() {
+      loadLevel(0);
+    };
+
+  </script>
+</body>
+</html>
